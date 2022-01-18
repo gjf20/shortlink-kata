@@ -60,3 +60,31 @@ func GetLink(slug string) (string, error) {
 	err := row.Scan(&link)
 	return link, err
 }
+
+func SlugVisited(slug string) error {
+	//increment the total visits
+	var visits int
+	db := GetDB()
+	row := db.QueryRow("SELECT visits FROM link_data WHERE slug = $1;", slug)
+
+	err := row.Scan(&visits)
+	if err != nil {
+		return err
+	}
+	visits += 1
+	db.Exec("UPDATE link_data SET visits = $1 WHERE slug = $2", visits, slug)
+
+	//increment the day that the slug was visited on
+	var dayVisits int
+	row = db.QueryRow("SELECT visits FROM link_visits WHERE slug = $1 AND day = CURRENT_DATE;", slug)
+
+	err = row.Scan(&dayVisits)
+	if err == sql.ErrNoRows {
+		db.Exec("INSERT INTO link_visits (slug) VALUES ($1)", slug) //default visits is 1
+	} else if err == nil {
+		dayVisits += 1
+		db.Exec("UPDATE link_visits SET visits = $1 WHERE slug = $2 AND day = CURRENT_DATE", dayVisits, slug)
+	}
+
+	return err
+}

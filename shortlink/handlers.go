@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"example.com/shortlink-kata/db"
 )
 
 const (
@@ -57,6 +59,10 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 
 	slug := getSlug(req)
 
+	err := db.SlugVisited(slug)
+	if err != nil {
+		fmt.Printf("encountered error logging a visit to slug %v: %v", slug, err)
+	}
 	link, err := getRedirectLink(slug)
 	if err != nil {
 		encodeError(w, fmt.Errorf("server encountered error getting registered link for slug %v : %v", slug, err), http.StatusInternalServerError)
