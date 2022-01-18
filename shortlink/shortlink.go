@@ -1,6 +1,10 @@
 package shortlink
 
-import "example.com/shortlink-kata/db"
+import (
+	"fmt"
+
+	"example.com/shortlink-kata/db"
+)
 
 var insert = db.InsertNewLink
 var getHash = generateHash
@@ -33,4 +37,18 @@ func createNewShortlink(req *NewShortRequest) (NewShortResponse, error) {
 
 func getRedirectLink(slug string) (string, error) {
 	return getLink(slug)
+}
+
+func getVisitInfo(slug string) (StatsResponse, error) {
+	visits, created, err := db.GetLinkData(slug)
+	if err != nil {
+
+		return StatsResponse{}, fmt.Errorf("encountered error getting link data: %v\n", err)
+	}
+	link, err := db.GetLink(slug)
+	if err != nil {
+		return StatsResponse{}, fmt.Errorf("encountered error getting link from slug %v: %v\n", slug, err)
+	}
+
+	return StatsResponse{Slug: slug, Link: link, TotalVisits: visits, CreatedAt: created}, nil
 }

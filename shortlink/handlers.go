@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"example.com/shortlink-kata/db"
 )
@@ -25,6 +26,14 @@ type NewShortRequest struct {
 type NewShortResponse struct {
 	Slug string `json:"slug"`
 	Link string `json:"link"`
+}
+
+type StatsResponse struct {
+	Slug        string    `json:"slug"`
+	Link        string    `json:"link"`
+	TotalVisits int       `json:"totalVisits"`
+	CreatedAt   time.Time `json:"createdAt"`
+	//todo return a histogram from the aggregated data
 }
 
 func createHandler(w http.ResponseWriter, req *http.Request) {
@@ -71,10 +80,32 @@ func redirectHandler(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, link, http.StatusSeeOther)
 }
 
+func statsHandler(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		encodeError(w, fmt.Errorf("server does not support Method: %v", req.Method), http.StatusBadRequest)
+		return
+	}
+
+	slug := getSlug(req)
+
+	stats, err := getVisitInfo(slug)
+	if err != nil {
+		encodeError(w, fmt.Errorf("server encountered error getting stats for slug %v : %v", slug, err), http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusCreated)
+
+	if err := json.NewEncoder(w).Encode(stats); err != nil {
+		encodeError(w, fmt.Errorf("encountered error encoding the shortlink stats: %v", err), http.StatusInternalServerError)
+		return
+	}
+}
+
 func getSlug(r *http.Request) string {
 	prefixPath := "/"
 
-	prefixInd := strings.Index(r.URL.Path, prefixPath)
+	prefixInd := strings.LastIndex(r.URL.Path, prefixPath)
 	var slug string
 	if prefixInd != -1 {
 		slug = r.URL.Path[prefixInd+1:]

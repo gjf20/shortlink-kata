@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -87,4 +88,17 @@ func SlugVisited(slug string) error {
 	}
 
 	return err
+}
+
+func GetLinkData(slug string) (int, time.Time, error) { //todo refactor ugly signature
+	db := GetDB()
+	row := db.QueryRow("SELECT visits, created_at FROM link_data WHERE slug = $1;", slug)
+
+	var visits int
+	var created time.Time
+	err := row.Scan(&visits, &created)
+	if err != nil {
+		return 0, time.Time{}, err
+	}
+	return visits, created, nil
 }
