@@ -2,11 +2,9 @@ package shortlink
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
@@ -25,19 +23,25 @@ type NewShortResponse struct {
 	Link string `json:"link"`
 }
 
-func CreateHandler(w http.ResponseWriter, req *http.Request) {
+func createHandler(w http.ResponseWriter, req *http.Request) {
 
 	shortLink, err := unmarshalRequest(w, req)
 	if err != nil {
 		return
 	}
 
-	t := NewShortResponse{Slug: "foo", Link: shortLink.Link} //todo insert to db here
+	fmt.Println("hello world")
+
+	t, err := createNewShortlink(&shortLink)
+	if err != nil {
+		fmt.Printf("encountered error creating shortlink: %v", err)
+	}
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 
 	if err := json.NewEncoder(w).Encode(t); err != nil {
-		log.Fatalf("Encountered error encoding the created shortlink: %v", err)
+		fmt.Printf("encountered error encoding the created shortlink: %v", err)
 	}
 }
 
@@ -45,20 +49,20 @@ func unmarshalRequest(w http.ResponseWriter, req *http.Request) (NewShortRequest
 	var shortLink NewShortRequest
 
 	if req.ContentLength > maxBodySize {
-		encodeError(w, errors.New(fmt.Sprintf("Request body too large")), http.StatusRequestEntityTooLarge)
+		encodeError(w, fmt.Errorf("request body too large"), http.StatusRequestEntityTooLarge)
 	}
 
 	body, err := ioutil.ReadAll(io.LimitReader(req.Body, maxBodySize))
 	if err != nil {
-		encodeError(w, errors.New(fmt.Sprintf("Encountered error reading request body: %v", err)), http.StatusBadRequest)
+		encodeError(w, fmt.Errorf("encountered error reading request body: %v", err), http.StatusBadRequest)
 		return shortLink, err
 	}
 	if err := req.Body.Close(); err != nil {
-		encodeError(w, errors.New(fmt.Sprintf("Encountered error closing request body: %v", err)), http.StatusInternalServerError)
+		encodeError(w, fmt.Errorf("encountered error closing request body: %v", err), http.StatusInternalServerError)
 		return shortLink, err
 	}
 	if err = json.Unmarshal(body, &shortLink); err != nil {
-		encodeError(w, errors.New(fmt.Sprintf("Encountered error unmarshalling the request body: %v", err)), http.StatusUnprocessableEntity)
+		encodeError(w, fmt.Errorf("encountered error unmarshalling the request body: %v", err), http.StatusUnprocessableEntity)
 		return shortLink, err
 	}
 	return shortLink, nil
@@ -67,7 +71,8 @@ func unmarshalRequest(w http.ResponseWriter, req *http.Request) (NewShortRequest
 func encodeError(w http.ResponseWriter, err error, status int) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(status)
+	fmt.Printf("error: %v", err)
 	if err := json.NewEncoder(w).Encode(err); err != nil {
-		log.Printf("Encountered error while encoding following error into response: %v", err)
+		fmt.Printf("encountered error while encoding following error into response: %v", err)
 	}
 }
