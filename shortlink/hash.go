@@ -10,6 +10,7 @@ import (
 
 const defaultHashLength = 7
 
+//function hook for easier testing
 var isAlreadyCreated = db.Exists
 
 func generateHash(s string) (string, error) {
