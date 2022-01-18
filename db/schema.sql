@@ -1,6 +1,9 @@
+--setup commands start
+CREATE DATABASE test_link;
+
 -- size of slug is linked to max output of the hashing function used in generateHash()
 -- size of link is based off of Chrome's max url length
- CREATE TABLE links(
+CREATE TABLE links(
     slug VARCHAR(20) PRIMARY KEY,
     link VARCHAR(2048));
 
@@ -31,12 +34,4 @@ CREATE TRIGGER trigger_new_link
      EXECUTE FUNCTION func_new_link();
 
 
-INSERT INTO links VALUES ('test-slug', 'https://google.com');
-
-SELECT * FROM link_visits WHERE slug = 'test-slug';
-
-
-
-ALTER TRIGGER trigger_new_link
-ON link 
-RENAME TO new_trigger_name_1;
+--setup commands end

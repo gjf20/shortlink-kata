@@ -8,3 +8,10 @@ A server that acts as a bit.ly-like URL shortener. The primary interface should 
     - How many times the short link has been visited total
     - A histogram of number of visits to the short link per day
 * The server itself handles redirecting short links to the URLs it creates
+
+# Configuration
+
+I used PostgreSQL version 14.1 as my database.  For simplicity, I did not configure a password (though I would in a production environment).
+
+To setup the database, please execute the commands (in the specified order) in the db/schema.sql file.
+
