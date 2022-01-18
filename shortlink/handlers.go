@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -15,7 +16,8 @@ const (
 )
 
 type NewShortRequest struct {
-	Link string `json:"link"`
+	Link       string `json:"link"`
+	CustomSlug string `json:"customSlug"`
 }
 
 type NewShortResponse struct {
@@ -25,24 +27,53 @@ type NewShortResponse struct {
 
 func createHandler(w http.ResponseWriter, req *http.Request) {
 
+	//todo check the http method and only respect POST
+
 	shortLink, err := unmarshalRequest(w, req)
 	if err != nil {
 		return
 	}
 
-	fmt.Println("hello world")
-
 	t, err := createNewShortlink(&shortLink)
 	if err != nil {
-		fmt.Printf("encountered error creating shortlink: %v", err)
+		encodeError(w, fmt.Errorf("encountered error creating shortlink: %v", err), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 
 	if err := json.NewEncoder(w).Encode(t); err != nil {
-		fmt.Printf("encountered error encoding the created shortlink: %v", err)
+		encodeError(w, fmt.Errorf("encountered error encoding the created shortlink: %v", err), http.StatusInternalServerError)
+		return
 	}
+}
+
+func redirectHandler(w http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		encodeError(w, fmt.Errorf("server does not support Method: %v", req.Method), http.StatusBadRequest)
+		return
+	}
+
+	slug := getSlug(req)
+
+	link, err := getRedirectLink(slug)
+	if err != nil {
+		encodeError(w, fmt.Errorf("server encountered error getting registered link for slug %v : %v", slug, err), http.StatusInternalServerError)
+	}
+
+	http.Redirect(w, req, link, http.StatusSeeOther)
+}
+
+func getSlug(r *http.Request) string {
+	prefixPath := "/"
+
+	prefixInd := strings.Index(r.URL.Path, prefixPath)
+	var slug string
+	if prefixInd != -1 {
+		slug = r.URL.Path[prefixInd+1:]
+	}
+	return slug
 }
 
 func unmarshalRequest(w http.ResponseWriter, req *http.Request) (NewShortRequest, error) {

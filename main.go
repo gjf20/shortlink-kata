@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"example.com/shortlink-kata/shortlink" //todo change the repetitive name
+	"example.com/shortlink-kata/shortlink"
 )
 
 func main() {

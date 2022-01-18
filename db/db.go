@@ -23,11 +23,7 @@ func GetDB() *sql.DB { //todo connection pooling
 }
 
 func Exists(slug string) bool {
-	db := GetDB()
-	row := db.QueryRow("SELECT link FROM links WHERE slug = $1;", slug)
-
-	var link string
-	err := row.Scan(&link)
+	_, err := GetLink(slug)
 
 	if err == sql.ErrNoRows {
 		return false
@@ -54,4 +50,13 @@ func InsertNewLink(slug, link string) error {
 		return fmt.Errorf("unexpectedly inserted %v rows", rowsAffected)
 	}
 	return nil
+}
+
+func GetLink(slug string) (string, error) {
+	var link string
+	db := GetDB()
+	row := db.QueryRow("SELECT link FROM links WHERE slug = $1;", slug)
+
+	err := row.Scan(&link)
+	return link, err
 }
