@@ -15,3 +15,13 @@ I used PostgreSQL version 14.1 as my database.  For simplicity, I did not config
 
 To setup the database, please execute the commands (in the specified order) in the db/schema.sql file.
 
+
+# Next steps
+
+I'd like to:
+* backfill the tests that I ended up testing manually due to deadline constraints
+* make the server robust against bad input (validating URLs)
+* use the database data to create a histogram image
+* enable access to histogram images by API
+* extract the code in db.SlugVisited function so that each operation is its own function
+* implement database connection pooling to increase the speed of the redirect API
